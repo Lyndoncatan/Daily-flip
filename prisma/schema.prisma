@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(cuid())
+  name      String?
+  email     String      @unique
+  password  String
+  image     String?
+  role      Role        @default(USER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  profile   Profile?
+  posts     Post[]
+  comments  Comment[]
+  sentFriendships     Friendship[] @relation("UserFriendships")
+  receivedFriendships Friendship[] @relation("FriendFriendships")
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  bio             String?
+  backgroundImage String?
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  content   String
+  mediaUrl  String?
+  mediaType String?
+  isPrivate Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    String
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String          @id @default(cuid())
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    String
+  friendId  String
+  user      User            @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User            @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
